@@ -122,6 +122,9 @@
         <option value="Sub Category">Sub Category</option>
       </select>
 
+      <!-- Add error message element after status select -->
+      <div id="error-message" style="color: #FF0000; font-size: 12px; margin-top: 4px; display: none;"></div>
+
       <div class="status-options">
         <div class="status-option">
           <span class="color-dot" style="background-color: #4CAF50"></span>
@@ -172,6 +175,7 @@
     const applyButton = document.getElementById('apply');
     const statusSelect = document.getElementById('status');
     const selectionInfo = document.getElementById('selectionInfo');
+    const errorMessage = document.getElementById('error-message');
 
     function updateSelectionInfo() {
       if (selectedPagesCount > 1) {
@@ -193,7 +197,10 @@
     }
 
     // Listen for status changes
-    statusSelect.addEventListener('change', updateButtonState);
+    statusSelect.addEventListener('change', () => {
+      errorMessage.style.display = 'none';
+      updateButtonState();
+    });
 
     document.getElementById('apply').onclick = () => {
       const status = statusSelect.value;
@@ -237,7 +244,16 @@
         updateSelectionInfo();
         updateButtonState();
       }
+
+      if (msg.type === 'status-error') {
+        errorMessage.textContent = msg.message;
+        errorMessage.style.display = 'block';
+        setTimeout(() => {
+          errorMessage.style.display = 'none';
+        }, 3000);
+        statusSelect.value = currentStatus; // Reset to previous value
+      }
     };
   </script>
 </body>
-</html> 
+</html>
