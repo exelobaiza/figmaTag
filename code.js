@@ -7,8 +7,8 @@ const STATUS_INDICATORS = {
   'Draft': '•    🛑',
   'Under Review': '•    👀 ',
   'Approved': '•    ✅ ',
-  'Section Title': ' ↪ ',
-  'Sub Category': '    ↪ '
+  'Section Title': ' ↪  ',
+  'Sub Category': '    ↪  '
 };
 
 // Store the status tags and colors in plugin data
