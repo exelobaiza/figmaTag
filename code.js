@@ -2,17 +2,14 @@ figma.showUI(__html__, { width: 300, height: 400 });
 
 // Define status indicators
 const STATUS_INDICATORS = {
-  'Complete': '•    🟢',
-  'In Progress': '•    🟡',
+  'Complete': '•    🟢 ',
+  'In Progress': '•    🟡 ',
   'Draft': '•    🛑',
-  'Under Review': '•    👀',
-  'Approved': '•    ✅',
-  'Section Title': ' ↪',
-  'Sub Category': '    ↪'
+  'Under Review': '•    👀 ',
+  'Approved': '•    ✅ ',
+  'Section Title': ' ↪ ',
+  'Sub Category': '    ↪ '
 };
-
-// Add at the top with other constants
-const STATUS_TRANSITIONS = {};
 
 // Store the status tags and colors in plugin data
 figma.clientStorage.getAsync('pageStatuses').then(statuses => {
@@ -23,8 +20,9 @@ figma.clientStorage.getAsync('pageStatuses').then(statuses => {
 
 // Function to clean page name from all status indicators
 function cleanPageName(pageName) {
-  // Remove status indicators and following 4 characters
-  return pageName.replace(/^\s*(?:•\s*[🟢🟡🛑👀✅]|↪)\s*.{0,4}/, '').trim();
+  // Remove status indicators and following 0-1 characters only once
+  const cleanedName = pageName.replace(/^\s*(?:•\s*[🟢🟡🛑👀✅]|↪)\s*.{0,1}/, '');
+  return cleanedName.trim();
 }
 
 // Function to get status safely
