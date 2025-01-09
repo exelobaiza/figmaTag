@@ -11,6 +11,9 @@ const STATUS_INDICATORS = {
   'Sub Category': '          ↪ '
 };
 
+// Add at the top with other constants
+const STATUS_TRANSITIONS = {};
+
 // Store the status tags and colors in plugin data
 figma.clientStorage.getAsync('pageStatuses').then(statuses => {
   if (!statuses) {
@@ -78,6 +81,16 @@ figma.ui.onmessage = async (msg) => {
     const selectedPages = await getSelectedPagesWithoutStatus();
     const statuses = await figma.clientStorage.getAsync('pageStatuses') || {};
     
+    // Check if trying to set same status
+    const currentStatus = getStatusSafely(statuses, figma.currentPage.id);
+    if (currentStatus === msg.status) {
+      figma.ui.postMessage({
+        type: 'status-error',
+        message: 'Cannot select the same status consecutively'
+      });
+      return;
+    }
+    
     // Update only pages without status
     for (const page of selectedPages) {
       if (msg.status) {
@@ -121,4 +134,4 @@ figma.ui.onmessage = async (msg) => {
 figma.on('selectionchange', notifySelectionChange);
 
 // Listen for page changes
-figma.on('currentpagechange', notifySelectionChange); 
+figma.on('currentpagechange', notifySelectionChange);
