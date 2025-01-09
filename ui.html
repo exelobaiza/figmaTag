@@ -253,6 +253,16 @@
         }, 3000);
         statusSelect.value = currentStatus; // Reset to previous value
       }
+
+      // Check if trying to set same status
+      const currentStatus = getStatusSafely(statuses, figma.currentPage.id);
+      if (currentStatus === msg.status) {
+        figma.ui.postMessage({
+          type: 'status-error',
+          message: 'Cannot select the same status consecutively'
+        });
+        return;
+      }
     };
   </script>
 </body>
