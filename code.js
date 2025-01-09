@@ -2,13 +2,13 @@ figma.showUI(__html__, { width: 300, height: 400 });
 
 // Define status indicators
 const STATUS_INDICATORS = {
-  'Complete': '        •    🟢    ',
-  'In Progress': '        •    🟡    ',
-  'Draft': '        •    🛑    ',
-  'Under Review': '        •    👀    ',
-  'Approved': '        •    ✅    ',
-  'Section Title': ' ↪   ',
-  'Sub Category': '          ↪ '
+  'Complete': '•    🟢',
+  'In Progress': '•    🟡',
+  'Draft': '•    🛑',
+  'Under Review': '•    👀',
+  'Approved': '•    ✅',
+  'Section Title': ' ↪',
+  'Sub Category': '    ↪'
 };
 
 // Add at the top with other constants
@@ -23,8 +23,8 @@ figma.clientStorage.getAsync('pageStatuses').then(statuses => {
 
 // Function to clean page name from all status indicators
 function cleanPageName(pageName) {
-  // Remove all possible status indicators
-  return pageName.replace(/^\s*(?:•\s*[🟢🟡🛑👀✅]|↪)\s*/, '').trim();
+  // Remove status indicators and following 4 characters
+  return pageName.replace(/^\s*(?:•\s*[🟢🟡🛑👀✅]|↪)\s*.{0,4}/, '').trim();
 }
 
 // Function to get status safely
@@ -53,12 +53,11 @@ async function updatePageNameWithStatus(pageId, status) {
   page.name = `${indicator}${originalName}`;
 }
 
-// Function to get selected pages without status
+// Modify function to return all selected pages
 async function getSelectedPagesWithoutStatus() {
-  const statuses = await figma.clientStorage.getAsync('pageStatuses') || {};
   return figma.currentPage.selection
-    .filter(node => node.type === 'PAGE' && !statuses[node.id])
-    .concat(!statuses[figma.currentPage.id] ? [figma.currentPage] : []); // Include current page only if it has no status
+    .filter(node => node.type === 'PAGE')
+    .concat([figma.currentPage]); // Include current page always
 }
 
 // Function to notify UI of selection change
@@ -81,37 +80,28 @@ figma.ui.onmessage = async (msg) => {
     const selectedPages = await getSelectedPagesWithoutStatus();
     const statuses = await figma.clientStorage.getAsync('pageStatuses') || {};
     
-    // Check if trying to set same status
-    const currentStatus = getStatusSafely(statuses, figma.currentPage.id);
-    if (currentStatus === msg.status) {
-      figma.ui.postMessage({
-        type: 'status-error',
-        message: 'Cannot select the same status consecutively'
-      });
-      return;
-    }
-    
-    // Update only pages without status
+    // Update all selected pages regardless of current status
     for (const page of selectedPages) {
       if (msg.status) {
-        // Add new status
         statuses[page.id] = {
           status: msg.status
         };
         await updatePageNameWithStatus(page.id, msg.status);
+      } else {
+        // Handle status removal
+        delete statuses[page.id];
+        await updatePageNameWithStatus(page.id, null);
       }
     }
     
-    // Save all changes to storage
     await figma.clientStorage.setAsync('pageStatuses', statuses);
     
-    // Notify the UI to update with current page status
     figma.ui.postMessage({
       type: 'status-updated',
       pageId: figma.currentPage.id,
       status: getStatusSafely(statuses, figma.currentPage.id),
       affectedPages: selectedPages.length,
-      hasUnassignedPages: false
+      hasUnassignedPages: true // Always enable status changes
     });
   }
   

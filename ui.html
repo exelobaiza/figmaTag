@@ -122,9 +122,6 @@
         <option value="Sub Category">Sub Category</option>
       </select>
 
-      <!-- Add error message element after status select -->
-      <div id="error-message" style="color: #FF0000; font-size: 12px; margin-top: 4px; display: none;"></div>
-
       <div class="status-options">
         <div class="status-option">
           <span class="color-dot" style="background-color: #4CAF50"></span>
@@ -175,7 +172,6 @@
     const applyButton = document.getElementById('apply');
     const statusSelect = document.getElementById('status');
     const selectionInfo = document.getElementById('selectionInfo');
-    const errorMessage = document.getElementById('error-message');
 
     function updateSelectionInfo() {
       if (selectedPagesCount > 1) {
@@ -190,15 +186,12 @@
     // Function to update button state
     function updateButtonState() {
       const selectedStatus = statusSelect.value;
-      // Enable button if:
-      // 1. A status is selected AND
-      // 2. There are unassigned pages selected
-      applyButton.disabled = !selectedStatus || !hasUnassignedPages;
+      // Enable button if status is selected (remove hasUnassignedPages check)
+      applyButton.disabled = !selectedStatus;
     }
 
     // Listen for status changes
     statusSelect.addEventListener('change', () => {
-      errorMessage.style.display = 'none';
       updateButtonState();
     });
 
@@ -243,25 +236,6 @@
         hasUnassignedPages = msg.hasUnassignedPages;
         updateSelectionInfo();
         updateButtonState();
-      }
-
-      if (msg.type === 'status-error') {
-        errorMessage.textContent = msg.message;
-        errorMessage.style.display = 'block';
-        setTimeout(() => {
-          errorMessage.style.display = 'none';
-        }, 3000);
-        statusSelect.value = currentStatus; // Reset to previous value
-      }
-
-      // Check if trying to set same status
-      const currentStatus = getStatusSafely(statuses, figma.currentPage.id);
-      if (currentStatus === msg.status) {
-        figma.ui.postMessage({
-          type: 'status-error',
-          message: 'Cannot select the same status consecutively'
-        });
-        return;
       }
     };
   </script>
