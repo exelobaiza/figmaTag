@@ -173,13 +173,13 @@
     const selectionInfo = document.getElementById('selectionInfo');
 
     function updateSelectionInfo() {
-      if (selectedPagesCount > 1) {
-        selectionInfo.textContent = `${selectedPagesCount} unassigned pages selected - Status will be applied to all unassigned pages`;
-      } else if (selectedPagesCount === 1 && hasUnassignedPages) {
-        selectionInfo.textContent = 'Current page is unassigned';
-      } else {
-        selectionInfo.textContent = '';
-      }
+      const selectionInfo = document.getElementById('selectionInfo');
+      if (!selectionInfo) return;
+      
+      const text = selectedPagesCount > 1 
+        ? `${selectedPagesCount} pages selected` 
+        : 'Current page';
+      selectionInfo.textContent = text;
     }
 
     // Function to update button state

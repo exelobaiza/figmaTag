@@ -32,23 +32,25 @@ function getStatusSafely(statuses, pageId) {
   return pageStatus && pageStatus.status ? pageStatus.status : '';
 }
 
-// Function to update page name with status
+// Update the updatePageNameWithStatus function
 async function updatePageNameWithStatus(pageId, status) {
-  const page = figma.getNodeById(pageId);
-  if (!page || page.type !== 'PAGE') return;
+  try {
+    const page = await figma.getNodeByIdAsync(pageId);
+    if (!page || page.type !== 'PAGE') return;
 
-  // Always clean the name first
-  const originalName = cleanPageName(page.name);
-  
-  // If no status, just use original name
-  if (!status) {
-    page.name = originalName;
-    return;
+    const originalName = cleanPageName(page.name);
+    
+    if (!status) {
+      page.name = originalName;
+      return;
+    }
+
+    const indicator = STATUS_INDICATORS[status] || '';
+    page.name = `${indicator}${originalName}`;
+  } catch (error) {
+    console.error('Error updating page name:', error);
+    throw error; // Re-throw to handle in caller
   }
-
-  // Add status indicator at the beginning
-  const indicator = STATUS_INDICATORS[status] || '';
-  page.name = `${indicator}${originalName}`;
 }
 
 // Modify function to return all selected pages
@@ -72,35 +74,40 @@ async function notifySelectionChange() {
   });
 }
 
-// Listen for messages from the UI
+// Update message handler
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'update-page-status') {
-    const selectedPages = await getSelectedPagesWithoutStatus();
-    const statuses = await figma.clientStorage.getAsync('pageStatuses') || {};
-    
-    // Update all selected pages regardless of current status
-    for (const page of selectedPages) {
-      if (msg.status) {
-        statuses[page.id] = {
-          status: msg.status
-        };
-        await updatePageNameWithStatus(page.id, msg.status);
-      } else {
-        // Handle status removal
-        delete statuses[page.id];
-        await updatePageNameWithStatus(page.id, null);
+    try {
+      const selectedPages = await getSelectedPagesWithoutStatus();
+      const statuses = await figma.clientStorage.getAsync('pageStatuses') || {};
+      
+      // Process pages sequentially
+      for (const page of selectedPages) {
+        try {
+          if (msg.status) {
+            statuses[page.id] = { status: msg.status };
+            await updatePageNameWithStatus(page.id, msg.status);
+          } else {
+            delete statuses[page.id];
+            await updatePageNameWithStatus(page.id, null);
+          }
+        } catch (err) {
+          console.error(`Failed to update page ${page.id}:`, err);
+        }
       }
+      
+      await figma.clientStorage.setAsync('pageStatuses', statuses);
+      
+      figma.ui.postMessage({
+        type: 'status-updated',
+        pageId: figma.currentPage.id,
+        status: getStatusSafely(statuses, figma.currentPage.id),
+        affectedPages: selectedPages.length,
+        hasUnassignedPages: true
+      });
+    } catch (error) {
+      console.error('Error in message handler:', error);
     }
-    
-    await figma.clientStorage.setAsync('pageStatuses', statuses);
-    
-    figma.ui.postMessage({
-      type: 'status-updated',
-      pageId: figma.currentPage.id,
-      status: getStatusSafely(statuses, figma.currentPage.id),
-      affectedPages: selectedPages.length,
-      hasUnassignedPages: true // Always enable status changes
-    });
   }
   
   if (msg.type === 'get-current-page-status') {
