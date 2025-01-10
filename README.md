@@ -2,6 +2,8 @@
 
 A Figma plugin that helps manage and visualize page statuses in your Figma files through visual indicators and emojis.
 
+<img src="pluginCover.png"/>
+
 ## Features
 
 - 🏷️ Assign status to Figma pages
